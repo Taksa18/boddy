@@ -18,6 +18,8 @@ const HAS_CLOUD = BOD_FIREBASE_CONFIG.apiKey && !String(BOD_FIREBASE_CONFIG.apiK
 
 window.__bodNS = "bod_"; // storage namespace — set BEFORE app.js loads
 let _user = null, _db = null, _auth = null, _saveT = null, _appLoaded = false;
+window.bodMe = ()=> (_user ? {uid:_user.uid, name:_user.displayName || "You"} : null);
+window.bodDb = ()=> _db;
 
 function loadAppOnce(after){
   if(_appLoaded) return; _appLoaded = true;
@@ -28,7 +30,7 @@ function loadAppOnce(after){
 }
 
 // ---- Firestore sync (whole profile in one doc: users/{uid}) ----
-const DOC_FIELDS = ["workouts","meals","vol","prot","xp","gems","streak","daily","quests","xphist"];
+const DOC_FIELDS = ["workouts","meals","vol","prot","xp","gems","streak","daily","quests","xphist","name"];
 function collectState(){
   try{
     if(typeof workouts === "undefined") return null;
@@ -48,7 +50,14 @@ window.cloudSave = function(){
   clearTimeout(_saveT);
   _saveT = setTimeout(async ()=>{
     const st = collectState(); if(!st) return;
-    try{ await _db.collection("users").doc(_user.uid).set(st, {merge:true}); }catch{}
+    try{
+      const name = _user.displayName || st.name || "Player";
+      st.name = name;
+      await _db.collection("users").doc(_user.uid).set(st, {merge:true});
+      const week = Object.values(st.xphist||{}).reduce((a,b)=>a+(+b||0),0);
+      await _db.collection("board").doc(_user.uid).set({name, xp:week, streak:(st.streak||{}).count||0, updatedAt:Date.now()});
+      if(window.refreshLeague) window.refreshLeague();
+    }catch{}
   }, 1500);
 };
 async function syncFromCloud(){
@@ -85,8 +94,29 @@ function paintChip(name, initial){
   document.getElementById("userName").textContent = name;
   document.getElementById("userAvatar").textContent = initial;
 }
+// unique contest handle for the friends league
+async function ensureHandle(user){
+  if(!_db) return user.displayName || "Player";
+  let base = String(user.displayName || (user.email||"").split("@")[0] || "Player").replace(/[^a-zA-Z0-9_]/g,"").slice(0,12) || "Player";
+  let handle = base, i = 0;
+  while(i < 200){
+    const key = handle.toLowerCase();
+    let s = null;
+    try{ s = await _db.collection("usernames").doc(key).get(); }catch(e){ return handle; }
+    if(!s.exists){
+      try{ await _db.collection("usernames").doc(key).set({uid:user.uid}); }
+      catch(e){ i++; handle = base + i; continue; }
+      break;
+    }
+    if(s.data() && s.data().uid === user.uid) break;
+    i++; handle = base + i;
+  }
+  if(user.displayName !== handle){ try{ await user.updateProfile({displayName:handle}); }catch{} }
+  return handle;
+}
 async function enterUser(user){
   _user = user;
+  await ensureHandle(user);
   window.__bodNS = "bod_" + user.uid + "_";
   const name = user.displayName || (user.email ? user.email.split("@")[0] : "you");
   paintChip(name, name[0].toUpperCase());
@@ -114,6 +144,8 @@ const FRIENDLY = {
   "auth/weak-password": "Password must be 6+ characters.",
   "auth/invalid-email": "That email looks off. Check it.",
   "auth/popup-closed-by-user": "Google popup closed — try again.",
+  "auth/bad-username": "Username: 3–15 letters, numbers or _.",
+  "auth/username-taken": "That username is taken — try another.",
 };
 function authError(e){
   const box = document.getElementById("authErr");
@@ -125,9 +157,12 @@ function wireForms(){
   const go = document.getElementById("authGo");
   document.getElementById("tabLogin").onclick = ()=>{ mode="login"; syncTabs(); };
   document.getElementById("tabSignup").onclick = ()=>{ mode="signup"; syncTabs(); };
+  syncTabs();
   function syncTabs(){
     document.getElementById("tabLogin").classList.toggle("active", mode==="login");
     document.getElementById("tabSignup").classList.toggle("active", mode==="signup");
+    document.getElementById("authUserRow").style.display = mode==="signup" ? "" : "none";
+    document.getElementById("authUser").required = mode==="signup";
     go.textContent = mode==="login" ? "LOG IN" : "CREATE ACCOUNT";
   }
   document.getElementById("authForm").onsubmit = async (e)=>{
@@ -137,9 +172,22 @@ function wireForms(){
     const email = document.getElementById("authEmail").value.trim();
     const pass = document.getElementById("authPass").value;
     try{
-      const cred = mode==="login"
-        ? await _auth.signInWithEmailAndPassword(email, pass)
-        : await _auth.createUserWithEmailAndPassword(email, pass);
+      let cred;
+      if(mode==="login"){
+        cred = await _auth.signInWithEmailAndPassword(email, pass);
+      } else {
+        const uname = document.getElementById("authUser").value.trim();
+        if(!/^[a-zA-Z0-9_]{3,15}$/.test(uname)) throw {code:"auth/bad-username"};
+        const key = uname.toLowerCase();
+        let taken = false;
+        try{ taken = (await _db.collection("usernames").doc(key).get()).exists; }
+        catch(e){ taken = false; }
+        if(taken) throw {code:"auth/username-taken"};
+        cred = await _auth.createUserWithEmailAndPassword(email, pass);
+        try{ await cred.user.updateProfile({displayName:uname}); }catch{}
+        try{ await _db.collection("usernames").doc(key).set({uid:cred.user.uid}); }
+        catch(e){ /* taken in a race — login flow assigns a variant */ }
+      }
       await enterUser(cred.user);
     }catch(err){ authError(err); go.disabled = false; }
   };

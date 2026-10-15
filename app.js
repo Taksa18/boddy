@@ -81,14 +81,42 @@ function claimQuest(id){
   celebrate('QUEST COMPLETE!', `+${q.xp||0} XP${q.gems?` +${q.gems} 💎`:''}`, q.name+' — done like a champ.');
   confettiBurst(); bounceBod();
 }
-const RIVALS=[{n:'Ava',e:'🦊',xp:340},{n:'Raj',e:'🐯',xp:290},{n:'Leo',e:'🐸',xp:230},{n:'Zoe',e:'🐰',xp:160},{n:'Max',e:'🐼',xp:95}];
+let _boardAt = 0, _boardCache = "";
+function boardInviteBtn(){ return `<button class="btn secondary small" id="inviteBtn" style="width:100%;margin-top:8px">COPY INVITE LINK 🔗</button>`; }
+function wireInviteBtn(box){
+  const b = box.querySelector("#inviteBtn"); if(!b) return;
+  b.onclick = async ()=>{
+    const link = location.origin + location.pathname;
+    try{ await navigator.clipboard.writeText(link); toast("Invite link copied! Send it to your friends 🔗"); }
+    catch(e){ prompt("Copy this link for your friends:", link); }
+  };
+}
 function renderLeague(){
   const box=$('#leagueList'); if(!box) return;
-  const mine=Object.values(xphist).reduce((a,b)=>a+b,0);
-  const rows=[...RIVALS.map(r=>({...r,you:false})),{n:'You',e:'🐹',xp:mine,you:true}].sort((a,b)=>b.xp-a.xp);
-  const medals=['🥇','🥈','🥉'];
-  box.innerHTML=rows.map((r,i)=>`<div class="league-row ${r.you?'you':''}"><div class="lrk ${i<3?'m'+(i+1):''}">${medals[i]||(i+1)}</div><div class="lname">${r.e} ${r.n}</div><div class="lxp">${r.xp} XP</div></div>`).join('');
+  loadBoard();
 }
+async function loadBoard(){
+  const box=$('#leagueList'); if(!box) return;
+  const me = window.bodMe ? window.bodMe() : null;
+  const db = window.bodDb ? window.bodDb() : null;
+  if(!me || !db){ box.innerHTML='<p class="muted">The friends league lives here. <b>Log in</b> to compete! 🏆</p>'; return; }
+  if(Date.now()-_boardAt < 10000 && _boardCache){ box.innerHTML=_boardCache; wireInviteBtn(box); return; }
+  box.innerHTML='<p class="muted">Warming up the league… ⚡</p>';
+  try{
+    const snap = await db.collection('board').orderBy('xp','desc').limit(10).get();
+    const rows = snap.docs.map(d=>({uid:d.id, ...(d.data()||{})}));
+    const medals=['🥇','🥈','🥉'];
+    if(!rows.length){
+      _boardCache = '<p class="muted">No rivals yet — invite your friends and be the champ! 🏆</p>'+boardInviteBtn();
+    } else {
+      _boardCache = rows.map((r,i)=>`<div class="league-row ${r.uid===me.uid?'you':''}"><div class="lrk ${i<3?'m'+(i+1):''}">${medals[i]||(i+1)}</div><div class="lname">${r.uid===me.uid?'🐹 ':''}${escapeHtml(r.name||'Player')} ${r.streak?`<small>🔥${r.streak}</small>`:''}</div><div class="lxp">${r.xp||0} XP</div></div>`).join('') + boardInviteBtn();
+    }
+    _boardAt = Date.now();
+    box.innerHTML = _boardCache; wireInviteBtn(box);
+  }catch(e){ box.innerHTML='<p class="muted">League is offline — check back soon. 📡</p>'; }
+}
+window.refreshLeague = ()=>{ _boardAt = 0; loadBoard(); };
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function celebrate(title, pill, sub){
   $('#celTitle').textContent=title; $('#celXp').textContent=pill;
   $('#celStreak').textContent=`🔥 ${streak.count}`;
@@ -120,7 +148,7 @@ const speeches = [
   'Bod says: "Streaks are built one rep at a time. Like this one!"',
   'Bod says: "That owl wishes he had your biceps. Keep going!"',
   'Bod says: "Daily quest available: drink water. Reward: life."',
-  'Bod says: "You are 3 workouts from passing Ava in the league. Hunt her. Nicely."',
+  'Bod says: "Your friends are training right now. Do not let them win."',
   'Bod says: "Log a meal, earn XP, become legend. Simple math."',
 ];
 
