@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bod — Gym + Meal Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+</head>
+<body>
+<!-- floating playful dots background -->
+<div class="dots-bg" id="dotsBg" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-dots"><span></span><span></span><span></span><span></span></div>
+    <div><div class="logo-title">Bod</div><div class="logo-sub">gym + meal buddy</div></div>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" data-page="dashboard">Dashboard</button>
+    <button class="tab" data-page="workouts">Workouts</button>
+    <button class="tab" data-page="meals">Meals</button>
+  </nav>
+  <div class="top-actions">
+    <div class="dstats">
+      <div class="dstat streak" title="Day streak — train daily to grow it!">🔥 <b id="streakCount">6</b></div>
+      <div class="dstat gems" title="Gems — earn them from quests">💎 <b id="gemCount">45</b></div>
+      <div class="dstat hearts" title="Energy — always full when you show up">❤️ <b>5</b></div>
+    </div>
+    <button class="btn small ghost" id="resetBtn" title="Reset to dummy data">↺</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ DASHBOARD ============ -->
+  <section id="page-dashboard" class="page active">
+    <div class="hero">
+      <div class="avatar-wrap">
+        <!-- 3D avatar: Bod the hamster (Three.js) -->
+        <div class="bod3d-wrap" id="bod" title="Click Bod!">
+          <canvas id="bod3d"></canvas>
+          <div class="bod-tag">3D • click me!</div>
+        </div>
+      </div>
+      <div class="hero-text">
+        <h1>Hey champ, <span class="wiggle">you're doing great!</span></h1>
+        <p id="bodSpeech">Bod says: “Protein is up 18% this week. Keep munching!”</p>
+        <div class="hero-btns">
+          <button class="btn primary" data-goto="workouts">+ Log workout</button>
+          <button class="btn secondary" data-goto="meals">+ Log meal</button>
+        </div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-top"><span>🎯 Daily goal</span><b id="goalLabel">30 / 50 XP</b></div>
+        <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+        <div class="chest-row"><span id="chest">🎁</span><span class="level-sub" id="xpLabel">20 XP to open the chest!</span></div>
+        <div class="goal-total"><span>⚡ Total XP</span><b id="totalXp">Lv 4 • 320 XP</b></div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="card stat pop" style="--d:0s"><div class="stat-label">Workouts this week</div><div class="stat-num" id="statWorkouts">5</div><div class="stat-delta up">▲ +2 vs last week</div></div>
+      <div class="card stat pop" style="--d:.08s"><div class="stat-label">Total volume lifted</div><div class="stat-num" id="statVolume">8,450 kg</div><div class="stat-delta up">▲ +12%</div></div>
+      <div class="card stat pop" style="--d:.16s"><div class="stat-label">Avg protein / day</div><div class="stat-num" id="statProtein">132 g</div><div class="stat-delta up">▲ on track 🎯</div></div>
+      <div class="card stat pop" style="--d:.24s"><div class="stat-label">Avg calories / day</div><div class="stat-num" id="statCals">2,310</div><div class="stat-delta flat">● steady & cozy</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card pop" style="--d:.1s">
+        <div class="card-head"><h2>Daily quests</h2><span class="pill">resets at midnight</span></div>
+        <div id="questList"></div>
+      </div>
+      <div class="card pop" style="--d:.18s">
+        <div class="card-head"><h2>🏆 Gold League</h2><span class="pill">this week</span></div>
+        <div id="leagueList"></div>
+        <p class="tiny">Top 3 get promoted. Bod believes in you. 🐹</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>Progress wiggles</h2><div class="legend"><span><i class="dot blue"></i>volume</span><span><i class="dot green"></i>protein</span></div></div>
+        <p class="muted">Last 14 days. Bigger wiggle = bigger gains.</p>
+        <svg id="mainChart" viewBox="0 0 600 240" class="chart"></svg>
+        <div class="chart-days" id="chartDays"></div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <div class="card-head"><h2>This week</h2><span class="pill">sets per day</span></div>
+          <div class="bars" id="weekBars"></div>
+        </div>
+        <div class="card row-card">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle id="proteinRing" cx="60" cy="60" r="48" class="ring-fg"/></svg>
+            <div class="ring-center"><b id="proteinPct">82%</b><span>protein goal</span></div>
+          </div>
+          <div>
+            <h2>Today's fuel</h2>
+            <p class="muted" id="todayFuel">132g / 160g protein • 2,140 / 2,500 kcal</p>
+            <div class="mini-bar"><div id="calBar"></div></div>
+            <p class="tiny">Bod does a happy bounce for every 20g protein. Go on.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Recent activity</h2><button class="btn small ghost" data-goto="workouts">view all →</button></div>
+      <div class="activity" id="activityFeed"></div>
+    </div>
+  </section>
+
+  <!-- ============ WORKOUTS ============ -->
+  <section id="page-workouts" class="page">
+    <div class="page-head">
+      <div><h1>Workout log 🏋️</h1><p class="muted">Note sets, reps & weight. Bod counts the XP.</p></div>
+      <button class="btn primary" id="openWorkoutModal">+ Add workout</button>
+    </div>
+    <div class="stat-grid small">
+      <div class="card stat"><div class="stat-label">Sessions logged</div><div class="stat-num" id="wTotal">12</div></div>
+      <div class="card stat"><div class="stat-label">Total sets</div><div class="stat-num" id="wSets">148</div></div>
+      <div class="card stat"><div class="stat-label">Favourite move</div><div class="stat-num sm">Barbell Squat 🍑</div></div>
+    </div>
+    <div class="card">
+      <div class="filters">
+        <input id="workoutSearch" placeholder="Search squat, push…" />
+        <div class="chip-row" id="muscleChips">
+          <button class="chip active">All</button><button class="chip">Push</button><button class="chip">Pull</button><button class="chip">Legs</button><button class="chip">Core</button><button class="chip">Cardio</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Date</th><th>Exercise</th><th>Muscle</th><th>Sets × Reps</th><th>Weight</th><th>Volume</th><th></th></tr></thead>
+        <tbody id="workoutRows"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ============ MEALS ============ -->
+  <section id="page-meals" class="page">
+    <div class="page-head">
+      <div><h1>Meal log 🍙</h1><p class="muted">Track protein & calories. No judgement, only wiggles.</p></div>
+      <button class="btn primary" id="openMealModal">+ Add meal</button>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>Today's macros</h2><span class="pill" id="mealDatePill">today</span></div>
+        <div class="macro"><div class="macro-top"><span>Protein</span><b id="macroProteinLabel">132 / 160 g</b></div><div class="macro-bar"><div id="macroProtein" class="fill green"></div></div></div>
+        <div class="macro"><div class="macro-top"><span>Calories</span><b id="macroCalLabel">2140 / 2500 kcal</b></div><div class="macro-bar"><div id="macroCal" class="fill blue"></div></div></div>
+        <div class="macro"><div class="macro-top"><span>Good vibes</span><b>∞</b></div><div class="macro-bar"><div class="fill rainbow" style="width:100%"></div></div></div>
+      </div>
+      <div class="card tip">
+        <h2>Bod's tip 💡</h2>
+        <p id="mealTip">You usually dip in protein on Fridays. Pre-log a yoghurt bowl tonight and future-you says thanks.</p>
+        <div class="bod-mini">●ᴗ●</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Meals</h2><input id="mealSearch" placeholder="Search paneer, eggs…" /></div>
+      <div class="meal-list" id="mealList"></div>
+    </div>
+  </section>
+</main>
+
+<!-- modals -->
+<div class="modal-bg" id="workoutModal">
+  <form class="modal pop-in" id="workoutForm">
+    <h2>Log a workout ✨</h2>
+    <label>Exercise<input required name="name" placeholder="e.g. Bench Press" /></label>
+    <div class="row2">
+      <label>Muscle group<select name="muscle"><option>Push</option><option>Pull</option><option>Legs</option><option>Core</option><option>Cardio</option></select></label>
+      <label>Date<input type="date" name="date" required /></label>
+    </div>
+    <div class="row3">
+      <label>Sets<input type="number" name="sets" min="1" value="3" required /></label>
+      <label>Reps<input type="number" name="reps" min="1" value="10" required /></label>
+      <label>Weight (kg)<input type="number" name="weight" min="0" value="40" step="0.5" required /></label>
+    </div>
+    <div class="modal-btns"><button type="button" class="btn ghost close-modal">cancel</button><button class="btn primary" type="submit">Save + bounce Bod 🎉</button></div>
+  </form>
+</div>
+
+<div class="modal-bg" id="mealModal">
+  <form class="modal pop-in" id="mealForm">
+    <h2>Log a meal 🍜</h2>
+    <div class="auto-box">
+      <b>✨ Auto-calculate from ingredients</b>
+      <p class="tiny">Type ingredients, Bod does the math. Try: <code>100g paneer, 2 eggs, 1 cup rice</code></p>
+      <div class="auto-row">
+        <input id="ingInput" placeholder="100g paneer, 2 eggs, 1 cup rice…" />
+        <button type="button" class="btn secondary small" id="ingBtn">Estimate</button>
+      </div>
+      <div id="ingResult" class="ing-result"><span class="tiny">Local database is instant. Unknown items are looked up on Open Food Facts 🌍</span></div>
+    </div>
+    <label>Meal<input required name="name" id="mealName" placeholder="e.g. Paneer bowl + rice" /></label>
+    <div class="row3">
+      <label>Protein (g)<input type="number" name="protein" id="mealProtein" min="0" value="30" step="0.5" required /></label>
+      <label>Calories<input type="number" name="cals" id="mealCals" min="0" value="550" step="1" required /></label>
+      <label>Time<select name="time"><option>Breakfast</option><option>Lunch</option><option>Snack</option><option>Dinner</option></select></label>
+    </div>
+    <div class="modal-btns"><button type="button" class="btn ghost close-modal">cancel</button><button class="btn primary" type="submit">Save + feed Bod 😋</button></div>
+  </form>
+</div>
+
+<!-- Duolingo-style celebration -->
+<div class="celebrate" id="celebrate">
+  <div class="cel-card pop-in">
+    <div class="cel-emoji">🏆</div>
+    <h1 id="celTitle">AMAZING!</h1>
+    <div class="cel-row"><span class="cel-xp" id="celXp">+20 XP</span><span class="cel-streak" id="celStreak">🔥 6</span></div>
+    <p id="celSub">Bod is doing happy backflips.</p>
+    <button class="btn primary big" id="celBtn">CONTINUE</button>
+  </div>
+</div>
+
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

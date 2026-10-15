@@ -1,0 +1,10 @@
+# Secrets — never upload these
+.env
+.env.*
+*.key
+*.pem
+
+# System / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
