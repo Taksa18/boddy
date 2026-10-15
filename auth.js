@@ -10,9 +10,9 @@
 //  6. In Firestore → Rules tab, paste the rules from chat, Publish.
 // ---------------------------------------------------------------
 const BOD_FIREBASE_CONFIG = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-  projectId: "PASTE_YOUR_PROJECT_ID",
+  apiKey: "AIzaSyB49MU_2Ej3w1E4C7S2dSW4jmMvS2p6KvY",
+  authDomain: "boddy-1c930.firebaseapp.com",
+  projectId: "boddy-1c930",
 };
 const HAS_CLOUD = BOD_FIREBASE_CONFIG.apiKey && !String(BOD_FIREBASE_CONFIG.apiKey).startsWith("PASTE");
 
