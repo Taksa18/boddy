@@ -8,6 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <!-- floating playful dots background -->
@@ -30,6 +33,7 @@
       <div class="dstat hearts" title="Energy — always full when you show up">❤️ <b>5</b></div>
     </div>
     <button class="btn small ghost" id="resetBtn" title="Reset to dummy data">↺</button>
+    <div class="user-chip" id="userChip" hidden><span class="uavatar" id="userAvatar">G</span><span id="userName">guest</span><button class="btn small ghost" id="logoutBtn">logout</button></div>
   </div>
 </header>
 
@@ -203,6 +207,29 @@
   </form>
 </div>
 
+<!-- auth gate: login / signup / guest -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card pop-in">
+    <div class="auth-mascot">🐹</div>
+    <h1>Meet <span class="wiggle">Boddy</span></h1>
+    <p class="muted">Log in to keep your streak on any device. Or sneak in as a guest.</p>
+    <div class="guest-note" id="cloudNote" hidden>⚠️ Online accounts aren't connected yet — guest mode only for now.</div>
+    <div class="cloud-only">
+      <div class="auth-tabs"><button type="button" class="auth-tab active" id="tabLogin">LOG IN</button><button type="button" class="auth-tab" id="tabSignup">SIGN UP</button></div>
+      <form id="authForm">
+        <label>Email<input type="email" id="authEmail" required placeholder="you@example.com" /></label>
+        <label>Password<input type="password" id="authPass" required minlength="6" placeholder="6+ characters" /></label>
+        <div class="auth-err" id="authErr" hidden></div>
+        <button class="btn primary big" type="submit" id="authGo">LOG IN</button>
+      </form>
+      <div class="divider">or</div>
+      <button class="btn secondary big" id="googleBtn">CONTINUE WITH GOOGLE</button>
+      <div class="divider">or</div>
+    </div>
+    <button class="btn ghost big" id="guestBtn">CONTINUE AS GUEST</button>
+  </div>
+</div>
+
 <!-- Duolingo-style celebration -->
 <div class="celebrate" id="celebrate">
   <div class="cel-card pop-in">
@@ -217,6 +244,6 @@
 <div class="confetti" id="confetti" aria-hidden="true"></div>
 <div class="toast" id="toast"></div>
 
-<script src="app.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>

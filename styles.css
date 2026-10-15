@@ -182,3 +182,23 @@ input:focus{border-color:var(--blue);background:#fff}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .pill{background:#f0f0f0;color:var(--muted);border-radius:8px;padding:4px 12px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.8px}
 @media(max-width:860px){.hero{grid-template-columns:1fr;text-align:center}.hero-btns{justify-content:center}.stat-grid{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}.topbar{flex-wrap:wrap;border-radius:18px}.tabs{order:3;width:100%}.tab{flex:1}.dstats{margin-left:auto}}
+
+/* ---- auth gate ---- */
+.auth-screen{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(247,247,247,.96);backdrop-filter:blur(4px);padding:16px;overflow:auto}
+.auth-card{background:#fff;border:2px solid var(--line);border-radius:24px;padding:32px;max-width:400px;width:100%;text-align:center}
+.auth-mascot{font-size:72px;animation:bodJump 2s ease-in-out infinite}
+.auth-card h1{margin:8px 0 4px;font-size:30px;font-weight:900}
+.auth-tabs{display:flex;gap:8px;background:#f0f0f0;border-radius:14px;padding:5px;margin:14px 0}
+.auth-tab{flex:1;border:0;background:transparent;border-radius:10px;padding:10px;font-weight:900;font-family:inherit;font-size:13px;letter-spacing:1px;color:var(--faint);cursor:pointer}
+.auth-tab.active{background:#fff;color:var(--blue);box-shadow:0 2px 0 var(--line)}
+.auth-card label{display:block;text-align:left;font-weight:800;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:10px 0}
+.auth-card input{width:100%;margin-top:6px}
+.auth-card .btn.big{margin-top:12px}
+.auth-err{background:#ffe5e5;border:2px solid var(--red);color:var(--red-d);font-weight:800;font-size:13px;border-radius:12px;padding:10px;margin-top:10px}
+.divider{color:var(--faint);font-weight:900;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin:14px 0 2px}
+.guest-note{background:#fff9db;border:2px solid var(--yellow);border-radius:12px;padding:10px;font-weight:800;font-size:13px;margin:10px 0}
+.no-cloud .cloud-only{display:none}
+.user-chip{display:flex;align-items:center;gap:8px;background:#f7f7f7;border:2px solid var(--line);border-radius:999px;padding:4px 6px 4px 4px;font-weight:900;font-size:13px}
+.uavatar{width:28px;height:28px;display:grid;place-items:center;background:var(--purple);color:#fff;border-radius:50%;font-size:14px}
+#userName{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+[hidden]{display:none!important}

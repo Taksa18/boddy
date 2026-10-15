@@ -1,8 +1,10 @@
 // Bod — playful gym + meal tracker. Dummy data + localStorage.
 const $ = s => document.querySelector(s);
 const store = {
-  get(k, fb){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb }catch{ return fb } },
-  set(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+  ns: (window.__bodNS || 'bod_'),
+  _k(k){ return this.ns + String(k).replace(/^(bod_|pip_)/,''); },
+  get(k, fb){ try{ const v = localStorage.getItem(this._k(k)); return v ? JSON.parse(v) : fb }catch{ return fb } },
+  set(k,v){ try{ localStorage.setItem(this._k(k), JSON.stringify(v)); }catch{} }
 };
 // migrate saved data from old Pip keys to Bod keys
 ['workouts','meals','vol','prot'].forEach(k=>{
@@ -324,6 +326,7 @@ function drawWeekBars(){
 function vol(w){ return w.sets*w.reps*w.weight; }
 function render(){
   store.set('bod_workouts',workouts); store.set('bod_meals',meals);
+  if(window.cloudSave) window.cloudSave();
   const totalVol = workouts.reduce((a,w)=>a+vol(w),0);
   const totalSets = workouts.reduce((a,w)=>a+w.sets,0);
   meals.forEach(m=>{ if(!m.day) m.day=T; });
