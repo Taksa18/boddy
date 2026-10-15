@@ -28,11 +28,11 @@
   </nav>
   <div class="top-actions">
     <div class="dstats">
-      <div class="dstat streak" title="Day streak — train daily to grow it!">🔥 <b id="streakCount">6</b></div>
-      <div class="dstat gems" title="Gems — earn them from quests">💎 <b id="gemCount">45</b></div>
+      <div class="dstat streak" title="Day streak — train daily to grow it!">🔥 <b id="streakCount">0</b></div>
+      <div class="dstat gems" title="Gems — earn them from quests">💎 <b id="gemCount">0</b></div>
       <div class="dstat hearts" title="Energy — always full when you show up">❤️ <b>5</b></div>
     </div>
-    <button class="btn small ghost" id="resetBtn" title="Reset to dummy data">↺</button>
+    <button class="btn small ghost" id="resetBtn" title="Clear all data">↺</button>
     <div class="user-chip" id="userChip" hidden><span class="uavatar" id="userAvatar">G</span><span id="userName">guest</span><button class="btn small ghost" id="logoutBtn">logout</button></div>
   </div>
 </header>
@@ -50,25 +50,25 @@
       </div>
       <div class="hero-text">
         <h1>Hey champ, <span class="wiggle">you're doing great!</span></h1>
-        <p id="bodSpeech">Bod says: “Protein is up 18% this week. Keep munching!”</p>
+        <p id="bodSpeech">Bod says: “Welcome! Log your first workout to start your streak 🔥”</p>
         <div class="hero-btns">
           <button class="btn primary" data-goto="workouts">+ Log workout</button>
           <button class="btn secondary" data-goto="meals">+ Log meal</button>
         </div>
       </div>
       <div class="goal-card">
-        <div class="goal-top"><span>🎯 Daily goal</span><b id="goalLabel">30 / 50 XP</b></div>
+        <div class="goal-top"><span>🎯 Daily goal</span><b id="goalLabel">0 / 50 XP</b></div>
         <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
-        <div class="chest-row"><span id="chest">🎁</span><span class="level-sub" id="xpLabel">20 XP to open the chest!</span></div>
-        <div class="goal-total"><span>⚡ Total XP</span><b id="totalXp">Lv 4 • 320 XP</b></div>
+        <div class="chest-row"><span id="chest">🎁</span><span class="level-sub" id="xpLabel">50 XP to open the chest!</span></div>
+        <div class="goal-total"><span>⚡ Total XP</span><b id="totalXp">Lv 1 • 0 XP</b></div>
       </div>
     </div>
 
     <div class="stat-grid">
-      <div class="card stat pop" style="--d:0s"><div class="stat-label">Workouts this week</div><div class="stat-num" id="statWorkouts">5</div><div class="stat-delta up">▲ +2 vs last week</div></div>
-      <div class="card stat pop" style="--d:.08s"><div class="stat-label">Total volume lifted</div><div class="stat-num" id="statVolume">8,450 kg</div><div class="stat-delta up">▲ +12%</div></div>
-      <div class="card stat pop" style="--d:.16s"><div class="stat-label">Avg protein / day</div><div class="stat-num" id="statProtein">132 g</div><div class="stat-delta up">▲ on track 🎯</div></div>
-      <div class="card stat pop" style="--d:.24s"><div class="stat-label">Avg calories / day</div><div class="stat-num" id="statCals">2,310</div><div class="stat-delta flat">● steady & cozy</div></div>
+      <div class="card stat pop" style="--d:0s"><div class="stat-label">Workouts this week</div><div class="stat-num" id="statWorkouts">0</div><div class="stat-delta flat" id="dwDelta">● 0 total</div></div>
+      <div class="card stat pop" style="--d:.08s"><div class="stat-label">Total volume lifted</div><div class="stat-num" id="statVolume">0 kg</div><div class="stat-delta flat" id="volDelta">● 0 sets</div></div>
+      <div class="card stat pop" style="--d:.16s"><div class="stat-label">Avg protein / day</div><div class="stat-num" id="statProtein">0 g</div><div class="stat-delta flat" id="protDelta">● 0% of goal</div></div>
+      <div class="card stat pop" style="--d:.24s"><div class="stat-label">Avg calories / day</div><div class="stat-num" id="statCals">0</div><div class="stat-delta flat" id="calDelta">● goal 2500</div></div>
     </div>
 
     <div class="grid-2">
@@ -98,11 +98,11 @@
         <div class="card row-card">
           <div class="ring-wrap">
             <svg viewBox="0 0 120 120" class="ring"><circle cx="60" cy="60" r="48" class="ring-bg"/><circle id="proteinRing" cx="60" cy="60" r="48" class="ring-fg"/></svg>
-            <div class="ring-center"><b id="proteinPct">82%</b><span>protein goal</span></div>
+            <div class="ring-center"><b id="proteinPct">0%</b><span>protein goal</span></div>
           </div>
           <div>
             <h2>Today's fuel</h2>
-            <p class="muted" id="todayFuel">132g / 160g protein • 2,140 / 2,500 kcal</p>
+            <p class="muted" id="todayFuel">0g / 160g protein • 0 / 2,500 kcal</p>
             <div class="mini-bar"><div id="calBar"></div></div>
             <p class="tiny">Bod does a happy bounce for every 20g protein. Go on.</p>
           </div>
@@ -125,7 +125,7 @@
     <div class="stat-grid small">
       <div class="card stat"><div class="stat-label">Sessions logged</div><div class="stat-num" id="wTotal">12</div></div>
       <div class="card stat"><div class="stat-label">Total sets</div><div class="stat-num" id="wSets">148</div></div>
-      <div class="card stat"><div class="stat-label">Favourite move</div><div class="stat-num sm">Barbell Squat 🍑</div></div>
+      <div class="card stat"><div class="stat-label">Favourite move</div><div class="stat-num sm" id="wFav">—</div></div>
     </div>
     <div class="card">
       <div class="filters">
@@ -150,8 +150,8 @@
     <div class="grid-2">
       <div class="card">
         <div class="card-head"><h2>Today's macros</h2><span class="pill" id="mealDatePill">today</span></div>
-        <div class="macro"><div class="macro-top"><span>Protein</span><b id="macroProteinLabel">132 / 160 g</b></div><div class="macro-bar"><div id="macroProtein" class="fill green"></div></div></div>
-        <div class="macro"><div class="macro-top"><span>Calories</span><b id="macroCalLabel">2140 / 2500 kcal</b></div><div class="macro-bar"><div id="macroCal" class="fill blue"></div></div></div>
+        <div class="macro"><div class="macro-top"><span>Protein</span><b id="macroProteinLabel">0 / 160 g</b></div><div class="macro-bar"><div id="macroProtein" class="fill green"></div></div></div>
+        <div class="macro"><div class="macro-top"><span>Calories</span><b id="macroCalLabel">0 / 2500 kcal</b></div><div class="macro-bar"><div id="macroCal" class="fill blue"></div></div></div>
         <div class="macro"><div class="macro-top"><span>Good vibes</span><b>∞</b></div><div class="macro-bar"><div class="fill rainbow" style="width:100%"></div></div></div>
       </div>
       <div class="card tip">

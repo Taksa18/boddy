@@ -53,10 +53,18 @@ window.cloudSave = function(){
 };
 async function syncFromCloud(){
   if(!_user || !_db) return;
+  const ref = _db.collection("users").doc(_user.uid);
+  const flag = "bod_cloud_" + _user.uid;
   try{
-    const ref = _db.collection("users").doc(_user.uid);
+    if(sessionStorage.getItem("bod_wiped")){
+      // fresh cleanup just ran locally — push the empty state up, don't restore old cloud dummy
+      sessionStorage.removeItem("bod_wiped");
+      const st = collectState();
+      if(st) await ref.set(st);
+      sessionStorage.setItem(flag, "1");
+      return;
+    }
     const snap = await ref.get();
-    const flag = "bod_cloud_" + _user.uid;
     if(snap.exists && !sessionStorage.getItem(flag)){
       writeState(window.__bodNS, snap.data() || {});
       sessionStorage.setItem(flag, "1");

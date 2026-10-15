@@ -16,15 +16,11 @@ const dayStr = (d=new Date())=> d.getFullYear()+'-'+String(d.getMonth()+1).padSt
 const T = dayStr();
 const Y = dayStr(new Date(Date.now()-864e5));
 const DAILY_GOAL = 50;
-function seedXpHist(){
-  const h={}, vals=[45,60,20,80,55,70];
-  for(let i=6;i>=1;i--) h[dayStr(new Date(Date.now()-i*864e5))]=vals[6-i];
-  return h;
-}
-let xpTotal = store.get('bod_xp', 320);
-let gems = store.get('bod_gems', 45);
-let streak = store.get('bod_streak', {count:6,last:T});
-let daily = store.get('bod_daily', {date:T,xp:30,goalDone:false});
+function seedXpHist(){ return {}; }
+let xpTotal = store.get('bod_xp', 0);
+let gems = store.get('bod_gems', 0);
+let streak = store.get('bod_streak', {count:0,last:''});
+let daily = store.get('bod_daily', {date:T,xp:0,goalDone:false});
 let questState = store.get('bod_quests', {date:T,claimed:[]});
 let xphist = store.get('bod_xphist', null) || seedXpHist();
 Object.keys(xphist).forEach(k=>{ if((new Date(T)-new Date(k))/864e5 > 7) delete xphist[k]; });
@@ -54,6 +50,7 @@ function touchStreak(){
 function renderHud(){
   if(!$('#streakCount')) return;
   $('#streakCount').textContent=streak.count;
+  document.querySelector('.dstat.streak').classList.toggle('off', streak.count===0);
   $('#gemCount').textContent=gems;
   $('#goalLabel').textContent=`${Math.min(daily.xp,DAILY_GOAL)} / ${DAILY_GOAL} XP`;
   $('#xpFill').style.width=Math.min(100,daily.xp/DAILY_GOAL*100)+'%';
@@ -99,31 +96,25 @@ function celebrate(title, pill, sub){
   $('#celebrate').classList.add('open');
 }
 
-const seedWorkouts = [
-  {id:1,date:'2026-10-14',name:'Barbell Squat',muscle:'Legs',sets:4,reps:8,weight:80},
-  {id:2,date:'2026-10-14',name:'Bench Press',muscle:'Push',sets:4,reps:10,weight:60},
-  {id:3,date:'2026-10-13',name:'Deadlift',muscle:'Pull',sets:3,reps:6,weight:100},
-  {id:4,date:'2026-10-13',name:'Overnight Oats Power',muscle:'Push',sets:3,reps:12,weight:20},
-  {id:5,date:'2026-10-12',name:'Pull-ups',muscle:'Pull',sets:4,reps:8,weight:0},
-  {id:6,date:'2026-10-12',name:'Plank Party',muscle:'Core',sets:3,reps:1,weight:0},
-  {id:7,date:'2026-10-11',name:'Morning Run',muscle:'Cardio',sets:1,reps:1,weight:0},
-  {id:8,date:'2026-10-10',name:'Overhead Press',muscle:'Push',sets:3,reps:10,weight:35},
-  {id:9,date:'2026-10-09',name:'Romanian Deadlift',muscle:'Legs',sets:3,reps:12,weight:50},
-  {id:10,date:'2026-10-08',name:'Barbell Row',muscle:'Pull',sets:4,reps:10,weight:45},
-];
-const seedMeals = [
-  {id:1,name:'Oats + whey + banana',protein:38,cals:520,time:'Breakfast'},
-  {id:2,name:'Paneer bowl + rice',protein:32,cals:640,time:'Lunch'},
-  {id:3,name:'Greek yoghurt + honey',protein:22,cals:280,time:'Snack'},
-  {id:4,name:'Chicken curry + 2 roti',protein:40,cals:700,time:'Dinner'},
-];
-const seedHistory = [4200,5100,0,6300,5800,7200,8450,6100,5400,7800,6900,8200,7600,8450];
-const seedProteinHist = [90,110,60,120,125,140,132,118,105,135,128,142,130,132];
+const seedWorkouts = [];
+const seedMeals = [];
+const seedHistory = [];
+const seedProteinHist = [];
 
 let workouts = store.get('bod_workouts', seedWorkouts);
 let meals = store.get('bod_meals', seedMeals);
 let volHist = store.get('bod_vol', seedHistory);
 let protHist = store.get('bod_prot', seedProteinHist);
+
+// one-time cleanup: remove pre-seeded dummy data from older versions
+if(!store.get('data_v', 0)){
+  ['workouts','meals','vol','prot','xp','gems','streak','daily','quests','xphist'].forEach(k=>{ try{ localStorage.removeItem(store._k(k)); }catch{} });
+  workouts=[]; meals=[]; volHist=[]; protHist=[];
+  xpTotal=0; gems=0; streak={count:0,last:''};
+  daily={date:T,xp:0,goalDone:false}; questState={date:T,claimed:[]}; xphist={}; xphist[T]=0;
+  saveGame(); store.set('data_v', 2);
+  try{ sessionStorage.setItem('bod_wiped','1'); }catch{}
+}
 
 const speeches = [
   'Bod says: "Streaks are built one rep at a time. Like this one!"',
@@ -302,6 +293,11 @@ function confettiBurst(){
 // --- charts ---
 function drawMainChart(){
   const svg=$('#mainChart'); const W=600,H=240,P=28;
+  if(!volHist.length){
+    svg.innerHTML=`<text x="300" y="105" text-anchor="middle" font-size="17" font-weight="900" fill="#afafaf">No data yet</text><text x="300" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="#afafaf">Log a workout and watch it grow 🌱</text>`;
+    $('#chartDays').innerHTML='';
+    return;
+  }
   const maxV=Math.max(...volHist,1000), maxP=Math.max(...protHist,50);
   const x=i=>P+i*(W-2*P)/(volHist.length-1);
   const yV=v=>H-P-(v/maxV)*(H-2*P), yP=v=>H-P-(v/maxP)*(H-2*P);
@@ -317,9 +313,14 @@ function drawMainChart(){
   $('#chartDays').innerHTML = volHist.map((_,i)=>`<span>${i%2? '': 'd'+(i+1)}</span>`).join('');
 }
 function drawWeekBars(){
-  const days=['M','T','W','T','F','S','S']; const sets=[12,8,15,10,14,18,9];
+  const box=$('#weekBars');
+  const counts=[0,0,0,0,0,0,0]; // Mon..Sun sets
+  workouts.forEach(w=>{ const d=new Date((w.date||'')+'T12:00:00'); if(!isNaN(d)) counts[(d.getDay()+6)%7]+=w.sets; });
+  if(counts.every(c=>c===0)){ box.innerHTML='<p class="muted" style="margin:auto">No workouts yet — your bars grow here 📊</p>'; return; }
+  const days=['M','T','W','T','F','S','S'];
   const colors=['#58cc02','#1cb0f6','#ffc800','#ff9600','#ff4b4b','#ce82ff','#58cc02'];
-  $('#weekBars').innerHTML=days.map((d,i)=>`<div class="bar-col"><div class="bar" style="height:${sets[i]*7}px;background:${colors[i]}"></div><span>${d}</span></div>`).join('');
+  const max=Math.max(...counts);
+  box.innerHTML=days.map((d,i)=>`<div class="bar-col"><div class="bar" style="height:${Math.max(10,counts[i]/max*140)}px;background:${colors[i]}" title="${counts[i]} sets"></div><span>${d}</span></div>`).join('');
 }
 
 // --- render all ---
@@ -333,12 +334,19 @@ function render(){
   const todayMeals = meals.filter(m=>m.day===T);
   const prot = todayMeals.reduce((a,m)=>a+ +m.protein,0);
   const cals = todayMeals.reduce((a,m)=>a+ +m.cals,0);
-  $('#statWorkouts').textContent = 5 + Math.floor(workouts.length/4);
-  $('#statVolume').textContent = (totalVol + 8450).toLocaleString() + ' kg';
-  $('#statProtein').textContent = (todayMeals.length? Math.round(prot/todayMeals.length*4.2):0) + ' g';
-  $('#statCals').textContent = (todayMeals.length? Math.round(cals/todayMeals.length*4.4):0).toLocaleString();
+  $('#statWorkouts').textContent = workouts.filter(w=>{ const t=new Date((w.date||'')+'T12:00:00').getTime(); return !isNaN(t) && t>=Date.now()-7*864e5; }).length;
+  $('#statVolume').textContent = totalVol.toLocaleString() + ' kg';
+  $('#statProtein').textContent = prot + ' g';
+  $('#statCals').textContent = cals.toLocaleString();
+  $('#dwDelta').textContent = `● ${workouts.length} total`;
+  $('#volDelta').textContent = `● ${totalSets} sets`;
+  const freq={}; workouts.forEach(w=>{ freq[w.name]=(freq[w.name]||0)+1; });
+  const fav=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  $('#wFav').textContent = fav ? fav[0] : '—';
   $('#wTotal').textContent = workouts.length; $('#wSets').textContent = totalSets;
   const pct = Math.min(100, Math.round(prot/160*100));
+  $('#protDelta').textContent = `● ${pct}% of goal`;
+  $('#protDelta').className = 'stat-delta ' + (pct>=100 ? 'up' : 'flat');
   $('#proteinPct').textContent = pct+'%';
   $('#proteinRing').style.strokeDashoffset = 302 - 302*pct/100;
   $('#todayFuel').textContent = `${prot}g / 160g protein • ${cals.toLocaleString()} / 2,500 kcal`;
@@ -356,14 +364,14 @@ function render(){
   const mq = ($('#mealSearch').value||'').toLowerCase();
   const em = {Breakfast:'🌅',Lunch:'🌞',Snack:'🍪',Dinner:'🌙'};
   $('#mealList').innerHTML = meals.filter(m=>m.name.toLowerCase().includes(mq))
-    .map(m=>`<div class="meal"><div class="act-emoji">${em[m.time]||'🍙'}</div><div class="meal-info"><b>${m.name}</b><span>${m.time} • ${m.cals} kcal</span></div><span class="meal-tag">💪 ${m.protein}g</span><button class="del" data-mid="${m.id}">✕</button></div>`).join('');
+    .map(m=>`<div class="meal"><div class="act-emoji">${em[m.time]||'🍙'}</div><div class="meal-info"><b>${m.name}</b><span>${m.time} • ${m.cals} kcal</span></div><span class="meal-tag">💪 ${m.protein}g</span><button class="del" data-mid="${m.id}">✕</button></div>`).join('') || '<p class="muted">No meals yet — log your first one! 🍙</p>';
   document.querySelectorAll('[data-mid]').forEach(b=>b.onclick=()=>{ meals=meals.filter(m=>m.id!=b.dataset.mid); render(); });
   // activity
   const acts = [
     ...workouts.slice(0,3).map(w=>({e:'🏋️',t:`<b>${w.name}</b> — ${w.sets}×${w.reps} @ ${w.weight}kg`,s:w.date})),
     ...meals.slice(0,2).map(m=>({e:'🍙',t:`<b>${m.name}</b> — ${m.protein}g protein`,s:m.time})),
   ];
-  $('#activityFeed').innerHTML = acts.map(a=>`<div class="act"><div class="act-emoji">${a.e}</div><div>${a.t}</div><span class="pill" style="margin-left:auto">${a.s}</span></div>`).join('');
+  $('#activityFeed').innerHTML = acts.map(a=>`<div class="act"><div class="act-emoji">${a.e}</div><div>${a.t}</div><span class="pill" style="margin-left:auto">${a.s}</span></div>`).join('') || '<div class="act"><div class="act-emoji">🌱</div><div>Nothing yet — log your first workout or meal!</div></div>';
   drawMainChart(); drawWeekBars(); renderHud();
 }
 $('#workoutSearch').oninput = render; $('#mealSearch').oninput = render;
@@ -485,6 +493,6 @@ $('#mealForm').onsubmit=e=>{
   render(); bounceBod(); confettiBurst(); toast('Meal logged! +10 XP 😋');
 };
 $('#celBtn').onclick=()=>$('#celebrate').classList.remove('open');
-$('#resetBtn').onclick=()=>{ localStorage.clear(); workouts=[...seedWorkouts]; meals=[...seedMeals]; volHist=[...seedHistory]; protHist=[...seedProteinHist]; xpTotal=320; gems=45; streak={count:6,last:T}; daily={date:T,xp:30,goalDone:false}; questState={date:T,claimed:[]}; xphist=seedXpHist(); xphist[T]=30; saveGame(); render(); toast('Fresh dummy data! Streak protected 🛡️'); };
+$('#resetBtn').onclick=()=>{ ['workouts','meals','vol','prot','xp','gems','streak','daily','quests','xphist'].forEach(k=>{ try{ localStorage.removeItem(store._k(k)); }catch{} }); workouts=[]; meals=[]; volHist=[]; protHist=[]; xpTotal=0; gems=0; streak={count:0,last:''}; daily={date:T,xp:0,goalDone:false}; questState={date:T,claimed:[]}; xphist={}; xphist[T]=0; saveGame(); render(); toast('All cleared — fresh start 🌱'); };
 
 render();
